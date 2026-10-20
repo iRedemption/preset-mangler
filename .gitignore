@@ -1,0 +1,5 @@
+__pycache__/
+settings.json
+stats-cache.json
+.venv
+.copilot-specs-cache/

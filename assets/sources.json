@@ -1,0 +1,496 @@
+{
+  "by_source_tuple": {
+    "[1, 0]": {
+      "label": null,
+      "raw": [
+        1,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[10, 0]": {
+      "label": null,
+      "raw": [
+        10,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[11, 0]": {
+      "label": null,
+      "raw": [
+        11,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[12, 0]": {
+      "label": null,
+      "raw": [
+        12,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[13, 0]": {
+      "label": null,
+      "raw": [
+        13,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[14, 0]": {
+      "label": null,
+      "raw": [
+        14,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[15, 0]": {
+      "label": null,
+      "raw": [
+        15,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[16, 0]": {
+      "label": null,
+      "raw": [
+        16,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[17, 0]": {
+      "label": null,
+      "raw": [
+        17,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[18, 0]": {
+      "label": null,
+      "raw": [
+        18,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[19, 0]": {
+      "label": null,
+      "raw": [
+        19,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[2, 0]": {
+      "label": null,
+      "raw": [
+        2,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset",
+        "Init_64_destinations_part2_env_mod_source.SerumPreset"
+      ]
+    },
+    "[20, 0]": {
+      "label": null,
+      "raw": [
+        20,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[21, 0]": {
+      "label": null,
+      "raw": [
+        21,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[22, 0]": {
+      "label": null,
+      "raw": [
+        22,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[23, 0]": {
+      "label": null,
+      "raw": [
+        23,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[24, 0]": {
+      "label": null,
+      "raw": [
+        24,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[25, 0]": {
+      "label": null,
+      "raw": [
+        25,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[26, 0]": {
+      "label": null,
+      "raw": [
+        26,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[27, 0]": {
+      "label": null,
+      "raw": [
+        27,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[28, 0]": {
+      "label": null,
+      "raw": [
+        28,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[29, 0]": {
+      "label": null,
+      "raw": [
+        29,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[3, 0]": {
+      "label": null,
+      "raw": [
+        3,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[30, 0]": {
+      "label": null,
+      "raw": [
+        30,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[31, 0]": {
+      "label": null,
+      "raw": [
+        31,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[32, 0]": {
+      "label": null,
+      "raw": [
+        32,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[33, 0]": {
+      "label": null,
+      "raw": [
+        33,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[34, 0]": {
+      "label": null,
+      "raw": [
+        34,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[35, 0]": {
+      "label": null,
+      "raw": [
+        35,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[36, 0]": {
+      "label": null,
+      "raw": [
+        36,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[37, 0]": {
+      "label": null,
+      "raw": [
+        37,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[38, 0]": {
+      "label": null,
+      "raw": [
+        38,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[4, 0]": {
+      "label": null,
+      "raw": [
+        4,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[49, 0]": {
+      "label": null,
+      "raw": [
+        49,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[5, 0]": {
+      "label": null,
+      "raw": [
+        5,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[50, 0]": {
+      "label": null,
+      "raw": [
+        50,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[51, 0]": {
+      "label": null,
+      "raw": [
+        51,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[52, 0]": {
+      "label": null,
+      "raw": [
+        52,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[53, 0]": {
+      "label": null,
+      "raw": [
+        53,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[54, 0]": {
+      "label": null,
+      "raw": [
+        54,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[55, 0]": {
+      "label": null,
+      "raw": [
+        55,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[56, 0]": {
+      "label": null,
+      "raw": [
+        56,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[57, 0]": {
+      "label": null,
+      "raw": [
+        57,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[58, 0]": {
+      "label": null,
+      "raw": [
+        58,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[59, 0]": {
+      "label": null,
+      "raw": [
+        59,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[6, 0]": {
+      "label": "LFO0",
+      "raw": [
+        6,
+        0
+      ],
+      "seen_in": [
+        "Init_64_mod_mappings.SerumPreset",
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[7, 0]": {
+      "label": null,
+      "raw": [
+        7,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[8, 0]": {
+      "label": null,
+      "raw": [
+        8,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    },
+    "[9, 0]": {
+      "label": null,
+      "raw": [
+        9,
+        0
+      ],
+      "seen_in": [
+        "Init_all_mod_sources.SerumPreset"
+      ]
+    }
+  }
+}
