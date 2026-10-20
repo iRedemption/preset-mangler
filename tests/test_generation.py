@@ -11,7 +11,9 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from backend.generation import compose, destination, generate, identity
+from backend.generation import compose, destination, generate, identity, prepare_library
+from backend.generator.families import FAMILIES
+from backend.generator.selection import patch_families
 from backend.preset import load_preset
 from backend.settings import (ASSETS, read_settings, write_output_directory,
                               write_safety_limiter, write_settings)
@@ -47,6 +49,18 @@ class GenerationTests(unittest.TestCase):
         self.assertTrue(all("BS - Test" in line for line in report if "←" in line))
         with self.assertRaisesRegex(ValueError, "No pluck filenames matched"):
             generate(self.folder, selection, "smart", "pluck")
+
+    def test_family_mapping_adds_filename_classification_and_filtering(self):
+        ambient = self.folder / "ambient - Test.SerumPreset"
+        shutil.copyfile(FIXTURES / "interpolationA.SerumPreset", ambient)
+        with patch.dict(FAMILIES, {
+            "ambient": {"words": ("ambient",), "abbreviations": ("amb",)}
+        }):
+            self.assertEqual(patch_families(ambient), {"ambient"})
+            self.assertEqual(
+                [path.name for path in prepare_library(self.folder, "smart", "ambient")],
+                [ambient.name],
+            )
 
     def test_seed_count_and_input_preservation(self):
         selection = {"Oscillator0": "generate", "Oscillator1": "generate"}

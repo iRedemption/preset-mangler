@@ -108,7 +108,7 @@ function fillHeader(d) {
   const activeProfile=activeGenerationProfile();
   const customOption=new Option('Custom','custom',false,activeProfile==='custom');customOption.disabled=true;
   profileSelect.add(customOption);
-  for(const item of generationProfiles)profileSelect.add(new Option(item.label,item.id,false,activeProfile===item.id));
+  for(const item of GENERATION_PROFILES)profileSelect.add(new Option(item.label,item.id,false,activeProfile===item.id));
   profileSelect.setAttribute('aria-label','Generation profile');
   profileSelect.onchange=()=>applyGenerationProfile(profileSelect.value);
   profile.append(element('span','','Profile'),profileSelect);d.append(profile);

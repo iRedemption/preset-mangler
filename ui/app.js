@@ -9,21 +9,18 @@ const families={env:['Env','Envelope'],lfo:['LFO','LFO'],filter:['VoiceFilter','
 const selectedKey=key=>families[key]?families[key][0]+S[key]:key;
 const status=message=>$('status').textContent=message;
 const macroModules=()=>state.initModules.filter(key=>key.startsWith('Macro'));
-const generationProfiles=[
-  {id:'default',label:'Default',keys:()=>['Oscillator0','Env0','LFO0','VoiceFilter0',...macroModules()],action:'modulations'},
-  {id:'modulators',label:'Modulators',keys:()=>state.baseModules.filter(key=>key.startsWith('Env')||key.startsWith('LFO')),action:'generate'},
-  {id:'osc-b-c-noise',label:'OSC B + C + Noise',keys:()=>['Oscillator1','Oscillator2','Oscillator3'],action:'generate'},
-  {id:'fx',label:'FX only',keys:()=>state.baseModules.filter(key=>key.startsWith('FXRack')),action:'generate'},
-  {id:'filters-fx',label:'Filters + FX',keys:()=>state.baseModules.filter(key=>key.startsWith('VoiceFilter')||key.startsWith('FXRack')),action:'generate'},
-  {id:'macros',label:'Macros only',keys:macroModules,action:'generate'},
-];
 
 function profileSelections(profile) {
-  return new Map(profile.keys().filter(key=>state.modules.has(key)).map(key=>[key,profile.action]));
+  const keys=new Set([
+    ...(profile.baseKeys||[]).filter(key=>state.baseModules.includes(key)),
+    ...state.baseModules.filter(key=>(profile.basePrefixes||[]).some(prefix=>key.startsWith(prefix))),
+    ...macroModules().filter(key=>(profile.initPrefixes||[]).some(prefix=>key.startsWith(prefix))),
+  ]);
+  return new Map([...keys].map(key=>[key,profile.action]));
 }
 
 function activeGenerationProfile() {
-  for(const profile of generationProfiles) {
+  for(const profile of GENERATION_PROFILES) {
     const expected=profileSelections(profile);
     if(expected.size&&expected.size===state.generated.size&&
       [...expected].every(([key,action])=>state.generated.get(key)===action))return profile.id;
@@ -33,7 +30,7 @@ function activeGenerationProfile() {
 
 function applyGenerationProfile(id) {
   if(state.busy)return;
-  const profile=generationProfiles.find(item=>item.id===id);
+  const profile=GENERATION_PROFILES.find(item=>item.id===id);
   if(!profile)return;
   const selections=profileSelections(profile);
   if(!selections.size) {

@@ -5,7 +5,7 @@ import random
 from functools import lru_cache
 from pathlib import Path
 
-from .generator.constants import PATCH_WORDS
+from .generator.families import FAMILIES
 from .generator.selection import destination_types, parse_module, patch_families, source_labels
 from .generator.transforms import interpolate_node, mutate_node
 from .preset import load_preset
@@ -46,7 +46,7 @@ def prepare_library(directory, mode, family):
         raise ValueError("Choose Random or Smart generation.")
     paths = library_paths(directory)
     if mode == "smart":
-        if family not in PATCH_WORDS:
+        if family not in FAMILIES:
             raise ValueError("Choose a valid preset family.")
         paths = [path for path in paths if family in patch_families(path)]
         if not paths:

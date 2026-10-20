@@ -8,7 +8,7 @@ from pathlib import Path
 
 from backend import settings
 from backend.container import unpack_in_memory
-from backend.generator.constants import PATCH_WORDS
+from backend.generator.families import FAMILIES
 from backend.generator.selection import patch_families, source_labels
 from backend.settings import ASSETS, library_paths
 
@@ -164,7 +164,7 @@ def build(library):
         "with_fx": sum(1 for r in records if r["fx"]),
         "avg_routes": round(sum(len(r["routes"]) for r in records) / count, 1),
         "unclassified": categories.get(UNCLASSIFIED, 0),
-        "families": sorted(PATCH_WORDS),
+        "families": sorted(FAMILIES),
         "categories": _top(categories),
         "engines": _top(engines),
         "filters": _top(filters),

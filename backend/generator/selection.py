@@ -11,10 +11,9 @@ from .constants import (
     MODULE_SELECTOR,
     OSCILLATOR_SUBTYPES,
     OSCILLATOR_TYPES,
-    PATCH_ABBREVIATIONS,
-    PATCH_WORDS,
     ModuleRef,
 )
+from .families import FAMILIES
 
 
 def parse_module(value: str) -> ModuleRef:
@@ -78,12 +77,12 @@ def patch_families(path: pathlib.Path) -> set[str]:
     raw_name = path.stem.lower()
     name = re.sub(r"[^a-z0-9]+", " ", raw_name)
     tokens = set(name.split())
-    families = {
-        family
-        for family, words in PATCH_WORDS.items()
-        if any(word in tokens or (len(word) > 2 and word in raw_name) for word in words)
-    }
-    for family, abbreviations in PATCH_ABBREVIATIONS.items():
+    families = set()
+    for family, mapping in FAMILIES.items():
+        words = mapping.get("words", ())
+        abbreviations = mapping.get("abbreviations", ())
+        if any(word in tokens or (len(word) > 2 and word in raw_name) for word in words):
+            families.add(family)
         if any(re.search(rf"(?<![a-z0-9]){re.escape(abbreviation)}(?![a-z0-9])", raw_name) for abbreviation in abbreviations):
             families.add(family)
     return families

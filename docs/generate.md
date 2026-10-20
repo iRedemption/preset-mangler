@@ -49,4 +49,9 @@ Configure a preset library in [Settings](./settings.md) to use **Library** donor
 
 The report lists the base, donors selected for each module, copied routes, and schema limitations.
 
+## Configuration for maintainers
+
+- Edit `ui/generation_profiles.js` to add or change profile labels, module keys/prefixes, and selection actions. `baseKeys` and `basePrefixes` select modules present in the chosen base; `initPrefixes` selects module types supported by the bundled Init preset.
+- Edit `backend/generator/families.py` to add a donor family. Each `FAMILIES` entry has a family name plus filename `words` and optional `abbreviations`; the family dropdown, stats categories, and donor matching use these keys automatically.
+
 See also: [Mutate](./mutate.md) · [Stats](./stats.md) · [Settings](./settings.md)

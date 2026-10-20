@@ -13,7 +13,7 @@ import webview
 from backend.container import unpack_in_memory
 from backend.preset import load_preset, mangle, save_preset
 from backend.generation import generate
-from backend.generator.constants import PATCH_WORDS
+from backend.generator.families import FAMILIES
 from backend.stats import build as build_stats
 from backend.settings import (ASSETS, library_paths, modules, read_settings,
                               write_output_directory, write_safety_limiter, write_settings)
@@ -27,7 +27,7 @@ class Bridge:
         self._name = ""
 
     def startup(self):
-        return {"settings": read_settings(), "families": sorted(PATCH_WORDS),
+        return {"settings": read_settings(), "families": sorted(FAMILIES),
                 "modules": modules(load_preset(ASSETS / "Init.SerumPreset")),
                 "source": self.load(self.initial) if self.initial else None}
 

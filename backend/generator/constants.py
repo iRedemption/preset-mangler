@@ -22,20 +22,6 @@ MODULE_GROUPS = {
     "fx": ("FXRack", 3),
     "routing": ("RoutingSlot", 7),
 }
-PATCH_WORDS = {
-    "bass": ("bass", "808", "reese", "sub", "bs", "ba"),
-    "lead": ("lead", "ld", "synthlead"),
-    "keys": ("keys", "key", "piano", "ky"),
-    "arp": ("arp", "arpeggio", "ar"),
-    "pluck": ("pluck", "plk", "plucks", "plucke", "pl"),
-}
-PATCH_ABBREVIATIONS = {
-    "bass": ("bs", "ba"),
-    "lead": ("ld",),
-    "keys": ("ky",),
-    "arp": ("ar",),
-    "pluck": ("plk", "pl"),
-}
 NON_INTERPOLATABLE_KEYS = {
     "source",
     "destModuleTypeString",
