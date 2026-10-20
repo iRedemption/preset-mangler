@@ -12,7 +12,8 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from backend.generation import compose, destination, generate, identity
 from backend.preset import load_preset
-from backend.settings import ASSETS, read_settings, write_output_directory, write_settings
+from backend.settings import (ASSETS, read_settings, write_output_directory,
+                              write_safety_limiter, write_settings)
 from ui.bridge import Bridge
 
 FIXTURES = Path(__file__).resolve().parents[1] / "testing/presets-for-tests"
@@ -33,9 +34,14 @@ class GenerationTests(unittest.TestCase):
         selection = {f"Oscillator{i}": "generate" for i in range(3)}
         [(output, report)] = generate(self.folder, selection, "smart", "bass", seed=7)
         donor = load_preset(self.folder / "BS - Test.SerumPreset")
+        limiter = load_preset(ASSETS / "Init_Safety_Limiter.SerumPreset")["data"]["FXRack0"]["FX"][0]
         for key in selection:
             self.assertEqual(output["data"][key], donor["data"][key])
         for key in self.base["data"].keys() - selection.keys():
+            if key == "FXRack0":
+                self.assertEqual(output["data"][key]["FX"],
+                                 self.base["data"][key]["FX"] + [limiter])
+                continue
             self.assertEqual(output["data"][key], self.base["data"][key], key)
         self.assertTrue(all("BS - Test" in line for line in report if "←" in line))
         with self.assertRaisesRegex(ValueError, "No pluck filenames matched"):
@@ -46,7 +52,7 @@ class GenerationTests(unittest.TestCase):
         a = generate(self.folder, selection, count=3, mutation=.3, interpolation=.5, seed=7)
         self.assertEqual(a, generate(self.folder, selection, count=3, mutation=.3, interpolation=.5, seed=7))
         self.assertEqual(len(a), 3)
-        self.assertEqual(generate(self.folder, {}, seed=7)[0][0], self.base)
+        self.assertEqual(generate(self.folder, {}, seed=7, safety_limiter=False)[0][0], self.base)
 
     def test_custom_base_and_single_donor(self):
         base_path = FIXTURES / "Init_mod_cutoff.SerumPreset"
@@ -58,7 +64,10 @@ class GenerationTests(unittest.TestCase):
             donor_path=donor_path, seed=7)
         self.assertEqual(output["data"]["Oscillator0"], donor["data"]["Oscillator0"])
         for key, value in base["data"].items():
-            if key != "Oscillator0":
+            if key == "FXRack0":
+                limiter = load_preset(ASSETS / "Init_Safety_Limiter.SerumPreset")["data"]["FXRack0"]["FX"][0]
+                self.assertEqual(output["data"][key]["FX"], value["FX"] + [limiter])
+            elif key != "Oscillator0":
                 self.assertEqual(output["data"][key], value, key)
         self.assertEqual(base, original_base)
         self.assertIn(f"Base: {base_path.name}", report)
@@ -82,10 +91,31 @@ class GenerationTests(unittest.TestCase):
         plain, _ = compose(self.base, parents, {key: "generate"}, random.Random(3))
         self.assertTrue(all(plain["data"][k] == v for k, v in self.base["data"].items() if k.startswith("ModSlot")))
 
+    def test_safety_limiter_appends_after_existing_effect_and_can_be_disabled(self):
+        limiter = load_preset(ASSETS / "Init_Safety_Limiter.SerumPreset")["data"]["FXRack0"]["FX"][0]
+        base = copy.deepcopy(self.base)
+        base["data"]["FXRack0"]["FX"].append(copy.deepcopy(limiter))
+        original = copy.deepcopy(base)
+
+        output, report = compose(base, {}, {}, random.Random(1))
+        self.assertEqual(output["data"]["FXRack0"]["FX"], [limiter, limiter])
+        self.assertEqual(base, original)
+        self.assertTrue(any("after 1 existing effect(s)" in line for line in report))
+
+        unchanged, report = compose(base, {}, {}, random.Random(1), safety_limiter=False)
+        self.assertEqual(unchanged, base)
+        self.assertTrue(any("disabled in Settings" in line for line in report))
+
     def test_settings_and_dry_run_do_not_write_presets(self):
         with patch("backend.settings.CONFIG", self.folder / "settings.json"):
             self.assertFalse(read_settings()["valid"])
+            self.assertTrue(read_settings()["safety_limiter"])
             self.assertTrue(write_settings(str(self.folder))["valid"])
+            settings = write_safety_limiter(False)
+            self.assertFalse(settings["safety_limiter"])
+            self.assertFalse(write_settings(str(self.folder))["safety_limiter"])
+            self.assertFalse(write_output_directory(str(self.folder))["safety_limiter"])
+            write_safety_limiter(True)
             bridge = Bridge()
             options = dict(mode="smart", family="bass", count=2, mutation=0, interpolation=0, seed=4, dry_run=True)
             target = self.folder / "not-created"

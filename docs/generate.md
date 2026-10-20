@@ -23,6 +23,7 @@ Configure a preset library in [Settings](./settings.md) to use **Library** donor
 - **Interpolation** blends compatible values across participating donors. At 100%, a pair reaches the midpoint.
 - Interpolation is available with Library donors; it has no effect when using one Specific preset donor.
 - **Dry run** reports what would be generated without writing any files.
+- **Append safety limiter** is enabled by default in Settings. When enabled, the compressor effect from the bundled `Init_Safety_Limiter.SerumPreset` is added at the end of `FXRack0` for each generated preset, after any existing effects; no existing effect is replaced.
 - **Base preset** supplies every unselected module and all other preset data; the source file is never modified.
 - **Specific preset** uses one chosen donor for each selected module and does not require a library. Family filtering applies only to Library donors.
 

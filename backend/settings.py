@@ -33,22 +33,29 @@ def read_settings():
         stored = {}
     directory = stored.get("library", "")
     output_directory = stored.get("output_directory", "")
+    safety_limiter = stored.get("safety_limiter", True)
+    if not isinstance(safety_limiter, bool):
+        safety_limiter = True
     try:
         count = len(library_paths(directory)) if directory else 0
         return {"library": directory, "output_directory": output_directory,
-                "valid": bool(count), "count": count}
+                "safety_limiter": safety_limiter, "valid": bool(count), "count": count}
     except (ValueError, OSError, TypeError) as error:
         return {"library": directory, "output_directory": output_directory,
-                "valid": False, "count": 0, "warning": str(error)}
+                "safety_limiter": safety_limiter, "valid": False, "count": 0,
+                "warning": str(error)}
 
 
 def write_settings(directory):
     paths = library_paths(directory)
     directory = str(Path(directory).expanduser().resolve())
-    output_directory = read_settings()["output_directory"]
-    CONFIG.write_text(json.dumps({"library": directory, "output_directory": output_directory},
-                                 indent=2), encoding="utf-8")
+    settings = read_settings()
+    output_directory = settings["output_directory"]
+    safety_limiter = settings["safety_limiter"]
+    CONFIG.write_text(json.dumps({"library": directory, "output_directory": output_directory,
+                                  "safety_limiter": safety_limiter}, indent=2), encoding="utf-8")
     return {"library": directory, "output_directory": output_directory,
+            "safety_limiter": safety_limiter,
             "valid": True, "count": len(paths)}
 
 
@@ -62,6 +69,17 @@ def write_output_directory(directory):
         output_directory = ""
     settings = read_settings()
     CONFIG.write_text(json.dumps({"library": settings["library"],
-                                  "output_directory": output_directory}, indent=2),
+                                  "output_directory": output_directory,
+                                  "safety_limiter": settings["safety_limiter"]}, indent=2),
                       encoding="utf-8")
+    return read_settings()
+
+
+def write_safety_limiter(enabled):
+    if not isinstance(enabled, bool):
+        raise ValueError("Safety limiter setting must be enabled or disabled.")
+    settings = read_settings()
+    CONFIG.write_text(json.dumps({"library": settings["library"],
+                                  "output_directory": settings["output_directory"],
+                                  "safety_limiter": enabled}, indent=2), encoding="utf-8")
     return read_settings()

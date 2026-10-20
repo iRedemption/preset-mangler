@@ -82,6 +82,16 @@ function drawSettings() {
     status(`Default output directory saved · ${result.output_directory}`);
   });
   $('settings-page').append(saveOutput);
+  $('settings-page').append(element('h2','','Generated preset safety limiter'));
+  const limiter=field('Append safety limiter','checkbox',state.settings.safety_limiter,enabled=>enabled,
+    'Append the standard digital limiter after the existing effects in FXRack0 for each generated preset.');
+  limiter.querySelector('input').onchange=()=>run(async()=>{
+    const input=limiter.querySelector('input');
+    const result=await pywebview.api.safety_limiter(input.checked);
+    if(result.error){input.checked=state.settings.safety_limiter;throw Error(result.error);}
+    state.settings=result;status(`Safety limiter ${result.safety_limiter?'enabled':'disabled'} for generated presets.`);
+  });
+  $('settings-page').append(limiter);
 }
 
 function makeControls(d) {d.classList.add('controls');d.id='header-controls';d.replaceChildren();fillHeader(d);}

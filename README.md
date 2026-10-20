@@ -7,9 +7,9 @@ A desktop tool for mutating, generating, and inspecting Serum 2 `.SerumPreset` f
 | Feature | Description |
 | ------- | ----------- |
 | [Mutate](./docs/mutate.md) | Randomly perturb values in an existing preset |
-| [Generate](./docs/generate.md) | Build on Init or a chosen preset using library or specific-preset donors |
+| [Generate](./docs/generate.md) | Build on Init or a chosen preset; optionally append a safety limiter |
 | [Stats](./docs/stats.md) | Charts and summaries of your preset library |
-| [Settings](./docs/settings.md) | Set your preset library and default output folders |
+| [Settings](./docs/settings.md) | Set your preset library, default output folder, and generation limiter |
 
 ## Quick start
 

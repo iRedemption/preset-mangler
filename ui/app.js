@@ -55,7 +55,7 @@ function refresh() {
       (state.gen.donorSource==='preset'?!state.gen.donorPath.trim():!state.settings.valid);
     $('export').textContent=generating?(state.gen.dry_run?'Preview generation':'Generate & save'):'Mangle & save';
   }
-  document.querySelectorAll('#io input,#io button,#modes button,#reset,#settings-page button,.module select').forEach(e=>e.disabled=state.busy);
+  document.querySelectorAll('#io input,#io button,#modes button,#reset,#settings-page input,#settings-page button,.module select').forEach(e=>e.disabled=state.busy);
 }
 
 async function run(action) {

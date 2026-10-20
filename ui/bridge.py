@@ -15,7 +15,7 @@ from backend.generation import generate
 from backend.generator.constants import PATCH_WORDS
 from backend.stats import build as build_stats
 from backend.settings import (ASSETS, library_paths, modules, read_settings,
-                              write_output_directory, write_settings)
+                              write_output_directory, write_safety_limiter, write_settings)
 
 
 class Bridge:
@@ -38,6 +38,12 @@ class Bridge:
     def output_directory(self, directory):
         try:
             return write_output_directory(directory)
+        except Exception as error:
+            return {"error": str(error)}
+
+    def safety_limiter(self, enabled):
+        try:
+            return write_safety_limiter(enabled)
         except Exception as error:
             return {"error": str(error)}
 
@@ -118,7 +124,8 @@ class Bridge:
                                    interpolation=options["interpolation"] / 100,
                                    seed=options.get("seed"),
                                    base_path=options.get("base_path") or None,
-                                   donor_path=donor_path)
+                                   donor_path=donor_path,
+                                   safety_limiter=config["safety_limiter"])
                 dry = options.get("dry_run", False)
                 folder = Path(destination).expanduser()
                 if not destination.strip() and not dry:

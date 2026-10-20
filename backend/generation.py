@@ -10,6 +10,29 @@ from .generator.transforms import interpolate_node, mutate_node
 from .preset import load_preset
 from .settings import ASSETS, library_paths, modules
 
+SAFETY_LIMITER_PRESET = ASSETS / "Init_Safety_Limiter.SerumPreset"
+
+
+def append_safety_limiter(preset, report):
+    """Append the verified Init safety limiter to the first FX rack."""
+    try:
+        limiter_preset = load_preset(SAFETY_LIMITER_PRESET)
+        effects = limiter_preset["data"]["FXRack0"]["FX"]
+        rack = preset["data"]["FXRack0"]
+        chain = rack["FX"]
+    except (KeyError, TypeError) as error:
+        raise ValueError("Cannot append safety limiter: expected FXRack0 FX chain data is missing.") from error
+    if not isinstance(effects, list) or len(effects) != 1 or not isinstance(effects[0], dict):
+        raise ValueError("Cannot append safety limiter: bundled limiter preset must contain one FXRack0 effect.")
+    if not isinstance(rack, dict) or not isinstance(chain, list):
+        raise ValueError("Cannot append safety limiter: base preset FXRack0 chain is not a list.")
+    limiter = effects[0]
+    if "FXComp" not in limiter:
+        raise ValueError("Cannot append safety limiter: bundled FXRack0 effect is not a compressor.")
+    existing_count = len(chain)
+    chain.append(copy.deepcopy(limiter))
+    report.append(f"Safety limiter: appended FXComp to FXRack0 after {existing_count} existing effect(s).")
+
 
 def prepare_library(directory, mode, family):
     if mode not in {"random", "smart"}:
@@ -42,12 +65,14 @@ def identity(slot):
 
 
 def compose(base, parents, selections, rng, mutation=0, interpolation=0,
-            base_name="Init.SerumPreset"):
+            base_name="Init.SerumPreset", safety_limiter=True):
     if not 0 <= mutation <= 1 or not 0 <= interpolation <= 1:
         raise ValueError("Mutation and interpolation must be between 0% and 100%.")
     if any(key not in modules(base) or action not in {"generate", "modulations"}
            for key, action in selections.items()):
         raise ValueError("Unsupported module or generation action.")
+    if not isinstance(safety_limiter, bool):
+        raise ValueError("Safety limiter setting must be enabled or disabled.")
     output, report, assignments = copy.deepcopy(base), [], {}
     for key in sorted(selections):
         candidates = [path for path, parent in parents.items() if key in parent["data"]]
@@ -112,12 +137,16 @@ def compose(base, parents, selections, rng, mutation=0, interpolation=0,
         report.append("FXRack modulation destination mapping is unconfirmed; effect routes cannot be inferred.")
     if mutation:
         report.append("Float mutation uses stored values; unknown ranges/defaults are not inferred.")
+    if safety_limiter:
+        append_safety_limiter(output, report)
+    else:
+        report.append("Safety limiter: disabled in Settings; no limiter appended.")
     return output, report
 
 
 def generate(directory, selections, mode="random", family="bass", count=1,
              mutation=0, interpolation=0, seed=None, base_path=None,
-             donor_path=None):
+             donor_path=None, safety_limiter=True):
     if not isinstance(count, int) or isinstance(count, bool) or count < 1:
         raise ValueError("Count must be a positive integer.")
     if seed is not None and (not isinstance(seed, int) or isinstance(seed, bool)):
@@ -133,5 +162,6 @@ def generate(directory, selections, mode="random", family="bass", count=1,
     base_file = load_preset(base_path) if base_path else load_preset(ASSETS / "Init.SerumPreset")
     base_name = Path(base_path).name if base_path else "Init.SerumPreset"
     rng = random.Random(seed)
-    return [compose(base_file, parents, selections, rng, mutation, interpolation, base_name)
+    return [compose(base_file, parents, selections, rng, mutation, interpolation,
+                    base_name, safety_limiter)
             for _ in range(count)]

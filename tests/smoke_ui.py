@@ -40,6 +40,7 @@ def check():
         else:
             raise AssertionError(window.evaluate_js("$('status').textContent"))
         assert window.evaluate_js("$('stage').hidden && document.querySelectorAll('#modes .mode-options>.choice').length===4")
+        assert window.evaluate_js("state.settings.safety_limiter===true")
         assert window.evaluate_js("$('generate-mode').getAttribute('aria-disabled')==='false';")
         assert window.evaluate_js("chooseMode('generate'); state.mode==='generate'")
         assert window.evaluate_js("chooseMode('mutate'); $('stage').hidden && !$('empty').hidden && !!document.querySelector('.drop-icon')")
@@ -89,6 +90,18 @@ def check():
                 break
             time.sleep(.1)
         assert window.evaluate_js("$('generate-mode').getAttribute('aria-disabled')==='false'")
+        window.evaluate_js("document.querySelector('#settings-page input[type=checkbox]').click();")
+        for _ in range(100):
+            if not window.evaluate_js("state.busy"):
+                break
+            time.sleep(.1)
+        assert window.evaluate_js("state.settings.safety_limiter===false")
+        window.evaluate_js("document.querySelector('#settings-page input[type=checkbox]').click();")
+        for _ in range(100):
+            if not window.evaluate_js("state.busy"):
+                break
+            time.sleep(.1)
+        assert window.evaluate_js("state.settings.safety_limiter===true")
         default_output = Path(temporary.name) / "default-output"
         default_output.mkdir()
         window.evaluate_js("$('output-directory').value=" + json.dumps(str(default_output)) +
@@ -117,6 +130,8 @@ def check():
         assert generated_preset['data']['Oscillator1'] == original['data']['Oscillator1']
         base = load_preset(settings.ASSETS / "Init.SerumPreset")
         assert generated_preset['data']['Oscillator2'] == base['data']['Oscillator2']
+        limiter = load_preset(settings.ASSETS / "Init_Safety_Limiter.SerumPreset")['data']['FXRack0']['FX'][0]
+        assert generated_preset['data']['FXRack0']['FX'] == [limiter]
         custom_base_path = root / "testing/presets-for-tests/Init_mod_cutoff.SerumPreset"
         custom_base = load_preset(custom_base_path)
         window.evaluate_js("$('report').close(); state.gen.donorSource='preset'; drawSidebar(); drawHeader(); "
@@ -147,7 +162,8 @@ def check():
         donor = load_preset(source)
         assert custom_output['data']['Oscillator1'] == donor['data']['Oscillator1']
         assert all(custom_output['data'][key] == value for key, value in custom_base['data'].items()
-                   if key != 'Oscillator1')
+                   if key not in ('Oscillator1', 'FXRack0'))
+        assert custom_output['data']['FXRack0']['FX'] == custom_base['data']['FXRack0']['FX'] + [limiter]
         assert window.evaluate_js("$('report').querySelector('pre').textContent.includes('Base: Init_mod_cutoff.SerumPreset') && "
                                   "$('report').querySelector('pre').textContent.includes('interpolationA.SerumPreset')")
         assert window.evaluate_js("$('report').close(); chooseMode('mutate'); ! $('stage').hidden && state.amount===30 && state.mutated.has('Oscillator0')")
