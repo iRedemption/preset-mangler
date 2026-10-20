@@ -1,5 +1,6 @@
 """Generation invariants tested with real exported Serum fixtures."""
 
+import base64
 import copy
 from pathlib import Path
 import random
@@ -72,6 +73,33 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(base, original_base)
         self.assertIn(f"Base: {base_path.name}", report)
         self.assertTrue(any(f"Oscillator0 ← {donor_path.name}" in line for line in report))
+
+    def test_in_memory_base_and_protects_dropped_source(self):
+        base_path = FIXTURES / "Init_mod_cutoff.SerumPreset"
+        base = load_preset(base_path)
+        [(output, report)] = generate(
+            self.folder, {"Oscillator0": "generate"}, donor_path=self.folder / "LD - Test.SerumPreset",
+            base_preset=base, base_name=base_path.name, seed=7)
+        self.assertEqual(output["data"]["Oscillator1"], base["data"]["Oscillator1"])
+        self.assertIn(f"Base: {base_path.name}", report)
+
+        with patch("backend.settings.CONFIG", self.folder / "settings.json"):
+            write_settings(str(self.folder))
+            bridge = Bridge()
+            inspected = bridge.inspect_preset(
+                encoded=base64.b64encode(base_path.read_bytes()).decode(),
+                name=base_path.name)
+            self.assertNotIn("error", inspected)
+            output_folder = self.folder / "outputs"
+            output_folder.mkdir()
+            destination = output_folder / "generated_custom_001.SerumPreset"
+            shutil.copyfile(base_path, destination)
+            options = dict(mode="random", family="random", count=1, mutation=0,
+                           interpolation=0, base_token=inspected["token"],
+                           donor_path=str(self.folder / "LD - Test.SerumPreset"))
+            result = bridge.generate(str(output_folder), {"Oscillator0": "generate"}, options)
+            self.assertIn("error", result)
+            self.assertIn("overwrite the dropped base preset", result["error"])
 
     def test_routes_follow_chosen_donor_only_and_are_atomic(self):
         parents = {path: load_preset(path) for path in [FIXTURES / "Init_mod_cutoff.SerumPreset",

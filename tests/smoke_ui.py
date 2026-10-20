@@ -166,6 +166,31 @@ def check():
         assert custom_output['data']['FXRack0']['FX'] == custom_base['data']['FXRack0']['FX'] + [limiter]
         assert window.evaluate_js("$('report').querySelector('pre').textContent.includes('Base: Init_mod_cutoff.SerumPreset') && "
                                   "$('report').querySelector('pre').textContent.includes('interpolationA.SerumPreset')")
+        dropped_base = base64.b64encode(custom_base_path.read_bytes()).decode()
+        window.evaluate_js("$('report').close(); run(()=>selectBase(''));")
+        for _ in range(100):
+            if window.evaluate_js("!state.busy && state.gen.basePath===''"):
+                break
+            time.sleep(.1)
+        window.evaluate_js('const baseTransfer=new DataTransfer(); baseTransfer.items.add(new File([Uint8Array.from(atob('
+                           + json.dumps(dropped_base) + '),c=>c.charCodeAt(0))],"DroppedBase.SerumPreset")); '
+                           'document.dispatchEvent(new DragEvent("drop",{dataTransfer:baseTransfer}));')
+        for _ in range(100):
+            if window.evaluate_js("!state.busy && state.gen.baseToken"):
+                break
+            time.sleep(.1)
+        assert window.evaluate_js("state.gen.baseName==='DroppedBase.SerumPreset' && "
+                                  "$('base-path').value==='DroppedBase.SerumPreset' && state.generated.size===0")
+        dropped_target = Path(temporary.name) / "dropped-base-generated"
+        window.evaluate_js("$('output').value=" + json.dumps(str(dropped_target)) + "; "
+                           "document.querySelector('[data-module=Oscillator1] [data-action=generate]').click(); $('export').click();")
+        for _ in range(100):
+            if window.evaluate_js("!state.busy && $('report').open"):
+                break
+            time.sleep(.1)
+        dropped_output = load_preset(dropped_target / "generated_custom_001.SerumPreset")
+        assert dropped_output['data']['Oscillator2'] == custom_base['data']['Oscillator2']
+        assert window.evaluate_js("$('report').querySelector('pre').textContent.includes('Base: DroppedBase.SerumPreset')")
         assert window.evaluate_js("$('report').close(); chooseMode('mutate'); ! $('stage').hidden && state.amount===30 && state.mutated.has('Oscillator0')")
         window.evaluate_js("$('report').close(); chooseMode('stats');")
         for _ in range(100):
@@ -174,7 +199,7 @@ def check():
             time.sleep(.1)
         assert window.evaluate_js("!$('stats-page').hidden && document.querySelectorAll('#stats-page .chart-box').length>=10 && document.querySelectorAll('#stats-page .stat-card').length>=4"), window.evaluate_js("$('status').textContent")
         assert window.evaluate_js("chooseMode('mutate'); $('stats-page').hidden")
-        print("PASS: mode access, mutation drop/export, library settings, Init/custom-base generation, specific donors, preservation and mode switching.")
+        print("PASS: mode access, mutation drop/export, library settings, Init/custom-base generation, dropped-base generation, specific donors, preservation and mode switching.")
     except Exception:
         failures.append(traceback.format_exc())
     finally:

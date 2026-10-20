@@ -38,6 +38,7 @@ function drawSidebar() {
   } else {
     const base=pathRow('base-path','Base preset (blank = Init)','input',selectBase);
     $('io').append(base);$('base-path').value=state.gen.basePath;
+    $('io').append(element('p','library-note','Or drop a .SerumPreset in Generate mode to use it as the base.'));
     const useInit=element('button','','Use Init as base');useInit.type='button';
     useInit.onclick=()=>run(async()=>{await selectBase('');$('base-path').value='';});
     $('io').append(useInit);

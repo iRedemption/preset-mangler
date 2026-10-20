@@ -66,3 +66,5 @@ python3 mangler.py
 On Windows, the window uses Microsoft Edge WebView2, which is installed on most systems. On macOS, it uses the built-in WebKit.
 
 Use the folder button beside a path field to reveal its file or containing folder in Explorer, Finder, or the system file manager.
+
+In Generate mode, drag a `.SerumPreset` onto the window to use it as the base preset. In Mutate mode, a dropped preset is loaded as the source.

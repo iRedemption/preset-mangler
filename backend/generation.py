@@ -146,7 +146,8 @@ def compose(base, parents, selections, rng, mutation=0, interpolation=0,
 
 def generate(directory, selections, mode="random", family="bass", count=1,
              mutation=0, interpolation=0, seed=None, base_path=None,
-             donor_path=None, safety_limiter=True):
+             donor_path=None, safety_limiter=True, base_preset=None,
+             base_name=None):
     if not isinstance(count, int) or isinstance(count, bool) or count < 1:
         raise ValueError("Count must be a positive integer.")
     if seed is not None and (not isinstance(seed, int) or isinstance(seed, bool)):
@@ -159,8 +160,16 @@ def generate(directory, selections, mode="random", family="bass", count=1,
             raise ValueError(f"Cannot load donor {path.name}: {error}") from error
     else:
         parents = prepare_library(directory, mode, family)
-    base_file = load_preset(base_path) if base_path else load_preset(ASSETS / "Init.SerumPreset")
-    base_name = Path(base_path).name if base_path else "Init.SerumPreset"
+    if base_preset is not None:
+        if base_path:
+            raise ValueError("Choose either a base preset path or an in-memory base preset.")
+        if not isinstance(base_preset, dict) or not isinstance(base_preset.get("data"), dict):
+            raise ValueError("In-memory base preset must contain preset module data.")
+        base_file = copy.deepcopy(base_preset)
+        base_name = base_name or "Dropped preset"
+    else:
+        base_file = load_preset(base_path) if base_path else load_preset(ASSETS / "Init.SerumPreset")
+        base_name = Path(base_path).name if base_path else "Init.SerumPreset"
     rng = random.Random(seed)
     return [compose(base_file, parents, selections, rng, mutation, interpolation,
                     base_name, safety_limiter)

@@ -1,6 +1,7 @@
 """Small desktop API; preset work remains in backend."""
 
 import base64
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -22,6 +23,7 @@ class Bridge:
     def __init__(self, initial=""):
         self._window, self.initial = None, initial
         self._preset, self._source, self._lock = None, None, RLock()
+        self._base_presets = {}
         self._name = ""
 
     def startup(self):
@@ -103,11 +105,24 @@ class Bridge:
             except Exception as error:
                 return {"error": str(error)}
 
-    def inspect_preset(self, path):
+    def inspect_preset(self, path="", encoded=None, name=""):
         try:
+            if encoded:
+                raw = base64.b64decode(encoded, validate=True)
+                preset = unpack_in_memory(raw)
+                digest = hashlib.sha256(raw).hexdigest()
+                token = digest
+                display_name = Path(name).name or "Dropped preset"
+                self._base_presets = {
+                    token: {"preset": preset, "name": display_name,
+                            "digest": digest}
+                }
+                return {"path": display_name, "name": display_name, "token": token,
+                        "modules": modules(preset)}
             preset_path = Path(path).expanduser().resolve()
             preset = load_preset(preset_path)
-            return {"path": str(preset_path), "modules": modules(preset)}
+            return {"path": str(preset_path), "name": preset_path.name,
+                    "token": "", "modules": modules(preset)}
         except Exception as error:
             return {"error": str(error)}
 
@@ -116,6 +131,11 @@ class Bridge:
             try:
                 config = read_settings()
                 donor_path = options.get("donor_path", "").strip() or None
+                base_token = options.get("base_token", "").strip()
+                cached_base = self._base_presets.get(base_token) if base_token else None
+                if base_token and cached_base is None:
+                    raise ValueError("The dropped base preset is no longer available. Drop it again.")
+                base_path = None if base_token else options.get("base_path") or None
                 if not donor_path and not config["valid"]:
                     raise ValueError("Set the library directory in Settings first.")
                 results = generate(config["library"], selections, mode=options["mode"],
@@ -123,9 +143,11 @@ class Bridge:
                                    mutation=options["mutation"] / 100,
                                    interpolation=options["interpolation"] / 100,
                                    seed=options.get("seed"),
-                                   base_path=options.get("base_path") or None,
+                                   base_path=base_path,
                                    donor_path=donor_path,
-                                   safety_limiter=config["safety_limiter"])
+                                   safety_limiter=config["safety_limiter"],
+                                   base_preset=cached_base["preset"] if cached_base else None,
+                                   base_name=cached_base["name"] if cached_base else None)
                 dry = options.get("dry_run", False)
                 folder = Path(destination).expanduser()
                 if not destination.strip() and not dry:
@@ -142,6 +164,10 @@ class Bridge:
                                   for path in (donor_path, options.get("base_path")) if path)
                     if any(path.resolve() in inputs for path in paths):
                         raise ValueError("Choose an output directory that will not overwrite a base, donor, or library preset.")
+                    if cached_base and any(
+                            path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == cached_base["digest"]
+                            for path in paths):
+                        raise ValueError("Choose an output that will not overwrite the dropped base preset.")
                     if any(path.exists() for path in paths) and not self._window.create_confirmation_dialog(
                             "Replace outputs?", "Replace existing generated files in this output directory?"):
                         return {"cancelled": True}

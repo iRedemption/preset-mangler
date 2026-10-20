@@ -1,8 +1,10 @@
 const state={mode:null,ready:false,modules:new Set(),baseModules:[],sourceModules:[],mutated:new Set(),generated:new Map(),
   amount:30,busy:false,loaded:false,input:'',output:'',settings:{library:'',output_directory:'',valid:false},families:[],
-  gen:{mode:'random',family:'random',basePath:'',donorSource:'library',donorPath:'',
+  gen:{mode:'random',family:'random',basePath:'',baseToken:'',baseName:'Init.SerumPreset',
+    donorSource:'library',donorPath:'',
     count:1,mutation:0,interpolation:0,seed:null,dry_run:false,output:'preset-generations'}};
 const generatedByBase=new Map();
+const baseKey=()=>state.gen.baseToken?`dropped:${state.gen.baseToken}`:state.gen.basePath;
 const families={env:['Env','Envelope'],lfo:['LFO','LFO'],filter:['VoiceFilter','Filter'],fx:['FXRack','FX rack']};
 const selectedKey=key=>families[key]?families[key][0]+S[key]:key;
 const status=message=>$('status').textContent=message;
@@ -70,22 +72,24 @@ function applySource(result) {
   for(const key of Object.keys(families))S[key]=0;
 }
 
-async function selectBase(path) {
+async function selectBase(path, encoded=null, name='') {
   const selected=path.trim();
-  let basePath='',baseModules=state.initModules;
-  if(selected) {
-    const result=await pywebview.api.inspect_preset(selected);
+  let basePath='',baseToken='',baseName='Init.SerumPreset',baseModules=state.initModules;
+  if(selected||encoded) {
+    const result=await pywebview.api.inspect_preset(selected,encoded,name);
     if(result.error)throw Error(result.error);
-    basePath=result.path;baseModules=result.modules;
+    basePath=result.path;baseToken=result.token||'';baseName=result.name||result.path;baseModules=result.modules;
   }
-  if(basePath===state.gen.basePath)return;
-  generatedByBase.set(state.gen.basePath,state.generated);
-  state.gen.basePath=basePath;state.baseModules=baseModules;
-  state.generated=generatedByBase.get(basePath)||new Map();
-  generatedByBase.set(basePath,state.generated);
+  const oldKey=baseKey(),newKey=baseToken?`dropped:${baseToken}`:basePath;
+  if(newKey===oldKey)return;
+  generatedByBase.set(oldKey,state.generated);
+  state.gen.basePath=basePath;state.gen.baseToken=baseToken;state.gen.baseName=baseName;
+  state.baseModules=baseModules;
+  state.generated=generatedByBase.get(newKey)||new Map();
+  generatedByBase.set(newKey,state.generated);
   if(state.mode==='generate')state.modules=new Set(baseModules);
   drawLayout();refresh();
-  status(`Base preset: ${basePath||'Init.SerumPreset'} · ${state.generated.size} module(s) selected.`);
+  status(`Base preset: ${baseName} · ${state.generated.size} module(s) selected.`);
 }
 
 async function load(path,encoded) {
@@ -102,7 +106,10 @@ async function exportPreset() {
     if(basePath!==state.gen.basePath)await selectBase(basePath);
     state.gen.donorPath=state.gen.donorSource==='preset'?$('donor-path').value.trim():'';
     state.gen.output=$('output').value;
-    const options=Object.assign({},state.gen,{base_path:state.gen.basePath,donor_path:state.gen.donorPath});
+    const options=Object.assign({},state.gen,{
+      base_path:state.gen.baseToken?'':state.gen.basePath,
+      base_token:state.gen.baseToken,donor_path:state.gen.donorPath
+    });
     result=await pywebview.api.generate(state.gen.output,Object.fromEntries(state.generated),options);
   } else {
     const destination=$('output').value;
@@ -117,13 +124,19 @@ async function exportPreset() {
 drawNavigation();refresh();fit();
 $('reset').onclick=()=>{state.mode==='generate'?state.generated.clear():state.mutated.clear();refresh();};
 $('report').querySelector('button').onclick=()=>$('report').close();
-document.addEventListener('dragover',e=>{e.preventDefault();if(state.mode==='mutate')document.body.classList.add('dragging');});
+document.addEventListener('dragover',e=>{e.preventDefault();if(['mutate','generate'].includes(state.mode))document.body.classList.add('dragging');});
 document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.classList.remove('dragging');});
 document.addEventListener('drop',e=>{
-  e.preventDefault();document.body.classList.remove('dragging');if(state.mode!=='mutate')return;
+  e.preventDefault();document.body.classList.remove('dragging');if(!['mutate','generate'].includes(state.mode))return;
   const files=e.dataTransfer.files;
   if(files.length!==1||!files[0].name.toLowerCase().endsWith('.serumpreset')){status('Drop one .SerumPreset file.');return;}
-  run(async()=>{const encoded=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.onerror=()=>reject(Error('Unable to read dropped file.'));r.readAsDataURL(files[0]);});await load(files[0].name,encoded);});
+  run(async()=>{
+    const encoded=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.onerror=()=>reject(Error('Unable to read dropped file.'));r.readAsDataURL(files[0]);});
+    if(state.mode==='generate') {
+      await selectBase('',encoded,files[0].name);
+      $('base-path').value=state.gen.basePath;
+    } else await load(files[0].name,encoded);
+  });
 });
 addEventListener('pywebviewready',()=>run(async()=>{
   const result=await pywebview.api.startup();state.settings=result.settings;state.baseModules=result.modules;state.families=result.families;

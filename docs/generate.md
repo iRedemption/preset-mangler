@@ -9,7 +9,7 @@ Configure a preset library in [Settings](./settings.md) to use **Library** donor
 ## Usage
 
 1. Choose **Generate** from the mode selector.
-2. Choose a **Base preset** in the sidebar, or leave it blank / select **Use Init as base** to use the bundled Init preset.
+2. Choose a **Base preset** in the sidebar, or drag a `.SerumPreset` file onto the window while Generate is active. Leave the field blank / select **Use Init as base** to use the bundled Init preset.
 3. Choose a donor source in the header:
    - **Library** uses the configured library and its **Family** selector. **Random / Mix** uses the entire library; **bass, lead, keys, arp, pluck** match words or abbreviations in the original filenames. If nothing matches, the family fails explicitly rather than borrowing unrelated donors.
    - **Specific preset** uses the preset selected in the sidebar as the donor for every selected module.
