@@ -74,6 +74,33 @@ class GenerationTests(unittest.TestCase):
         self.assertIn(f"Base: {base_path.name}", report)
         self.assertTrue(any(f"Oscillator0 ← {donor_path.name}" in line for line in report))
 
+    def test_macro_generation_adds_missing_macro_modules_only(self):
+        base = copy.deepcopy(self.base)
+        macro_keys = [key for key in self.base["data"] if key.startswith("Macro")]
+        for key in macro_keys:
+            del base["data"][key]
+        donor_path = FIXTURES / "interpolationA.SerumPreset"
+        donor = load_preset(donor_path)
+        selections = {key: "generate" for key in macro_keys}
+
+        output, report = compose(
+            base, {donor_path: donor}, selections, random.Random(2), safety_limiter=False)
+
+        self.assertEqual(set(output["data"]) - set(base["data"]), set(macro_keys))
+        for key in macro_keys:
+            self.assertEqual(output["data"][key], donor["data"][key])
+        for key, value in base["data"].items():
+            self.assertEqual(output["data"][key], value, key)
+        self.assertTrue(any("Copied 0 complete modulation routes" in line for line in report))
+        unchanged, missing_report = compose(
+            base, {}, selections, random.Random(2), safety_limiter=False)
+        self.assertEqual(unchanged, base)
+        self.assertTrue(any("Macro0: absent from donors; no module added." in line
+                            for line in missing_report))
+        with self.assertRaisesRegex(ValueError, "Unsupported module"):
+            compose(base, {donor_path: donor}, {"Macro99": "generate"}, random.Random(2),
+                    safety_limiter=False)
+
     def test_in_memory_base_and_protects_dropped_source(self):
         base_path = FIXTURES / "Init_mod_cutoff.SerumPreset"
         base = load_preset(base_path)

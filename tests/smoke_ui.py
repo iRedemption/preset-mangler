@@ -113,6 +113,26 @@ def check():
         assert window.evaluate_js("state.settings.output_directory===" + json.dumps(str(default_output.resolve())) +
                                   " && state.gen.output===" + json.dumps(str(default_output.resolve())))
         assert window.evaluate_js("chooseMode('generate'); ! $('stage').hidden && state.generated.size===12")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile').getBoundingClientRect();"
+                                  "const c=$('header-controls').getBoundingClientRect();"
+                                  "return s.width>40 && s.right<=c.right})()"), window.evaluate_js(
+                                      "JSON.stringify({profile:$('generation-profile').getBoundingClientRect().toJSON(),"
+                                      "controls:$('header-controls').getBoundingClientRect().toJSON()})")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile');s.value='macros';s.dispatchEvent(new Event('change'));"
+                                  "return state.generated.size===8 && [...state.generated].every(([k,a])=>"
+                                  "k.startsWith('Macro') && a==='generate')})()")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile');s.value='modulators';s.dispatchEvent(new Event('change'));"
+                                  "return state.generated.size===14 && [...state.generated.keys()].every(k=>"
+                                  "k.startsWith('Env') || k.startsWith('LFO'))})()")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile');s.value='osc-b-c-noise';s.dispatchEvent(new Event('change'));"
+                                  "return [...state.generated.keys()].join(',')==='Oscillator1,Oscillator2,Oscillator3'})()")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile');s.value='fx';s.dispatchEvent(new Event('change'));"
+                                  "return [...state.generated.keys()].join(',')==='FXRack0,FXRack1,FXRack2'})()")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile');s.value='filters-fx';s.dispatchEvent(new Event('change'));"
+                                  "return state.generated.size===5 && [...state.generated.keys()].every(k=>"
+                                  "k.startsWith('VoiceFilter') || k.startsWith('FXRack'))})()")
+        assert window.evaluate_js("(()=>{const s=$('generation-profile');s.value='default';s.dispatchEvent(new Event('change'));"
+                                  "return state.generated.size===12 && $('generation-profile').value==='default'})()")
         assert window.evaluate_js("['base-path','output'].every(id=>{const row=$(id).parentElement;const button=row.querySelector('.reveal-path');return button&&button.getAttribute('aria-label')&&button.querySelector('svg')})")
         assert window.evaluate_js("['Oscillator0','Env0','LFO0','VoiceFilter0','Macro7'].every(k=>state.generated.get(k)==='modulations')")
         assert window.evaluate_js("document.querySelector('[data-module=Oscillator1] [data-action=generate]').click(); state.generated.get('Oscillator1')==='generate'")

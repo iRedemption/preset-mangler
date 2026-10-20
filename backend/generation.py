@@ -2,6 +2,7 @@
 
 import copy
 import random
+from functools import lru_cache
 from pathlib import Path
 
 from .generator.constants import PATCH_WORDS
@@ -11,6 +12,12 @@ from .preset import load_preset
 from .settings import ASSETS, library_paths, modules
 
 SAFETY_LIMITER_PRESET = ASSETS / "Init_Safety_Limiter.SerumPreset"
+
+
+@lru_cache(maxsize=1)
+def _init_macro_modules():
+    init = load_preset(ASSETS / "Init.SerumPreset")
+    return frozenset(key for key in modules(init) if key.startswith("Macro"))
 
 
 def append_safety_limiter(preset, report):
@@ -68,7 +75,11 @@ def compose(base, parents, selections, rng, mutation=0, interpolation=0,
             base_name="Init.SerumPreset", safety_limiter=True):
     if not 0 <= mutation <= 1 or not 0 <= interpolation <= 1:
         raise ValueError("Mutation and interpolation must be between 0% and 100%.")
-    if any(key not in modules(base) or action not in {"generate", "modulations"}
+    valid_modules = set(modules(base))
+    if any(isinstance(key, str) and key.startswith("Macro") and key not in valid_modules
+           for key in selections):
+        valid_modules.update(_init_macro_modules())
+    if any(key not in valid_modules or action not in {"generate", "modulations"}
            for key, action in selections.items()):
         raise ValueError("Unsupported module or generation action.")
     if not isinstance(safety_limiter, bool):
@@ -77,7 +88,10 @@ def compose(base, parents, selections, rng, mutation=0, interpolation=0,
     for key in sorted(selections):
         candidates = [path for path, parent in parents.items() if key in parent["data"]]
         if not candidates:
-            report.append(f"{key}: absent from donors; kept base value.")
+            if key in output["data"]:
+                report.append(f"{key}: absent from donors; kept base value.")
+            else:
+                report.append(f"{key}: absent from donors; no module added.")
             continue
         path = rng.choice(candidates)
         assignments[key] = path

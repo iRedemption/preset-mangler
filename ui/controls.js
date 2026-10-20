@@ -15,7 +15,7 @@ function drawNavigation() {
 function chooseMode(mode) {
   if(state.busy||mode==='generate'&&!state.ready)return;
   state.mode=mode;
-  state.modules=mode==='generate'?new Set(state.baseModules):new Set(state.sourceModules);
+  state.modules=mode==='generate'?generationModules(state.baseModules):new Set(state.sourceModules);
   $('settings-page').hidden=mode!=='settings';
   $('stats-page').hidden=mode!=='stats';
   $('empty').hidden=['settings','stats','generate'].includes(mode)||mode==='mutate'&&state.loaded;
@@ -102,6 +102,16 @@ function fillHeader(d) {
   const generating=state.mode==='generate';
   d.append(knob('Mutation',generating?state.gen.mutation:state.amount,n=>{if(generating)state.gen.mutation=n;else state.amount=n;refresh();},'Vary stored floats by ± the selected percentage.'));
   if(!generating) {d.append(element('span','hint','Hover a module to choose Keep or Mutate.'));return;}
+  const profile=tooltip(element('label','setting profile-setting'),
+    'Apply a starting module selection, then fine-tune individual modules. Modulators replaces available envelopes and LFOs; Velocity and Note are not separate replaceable modules.');
+  const profileSelect=element('select');profileSelect.id='generation-profile';
+  const activeProfile=activeGenerationProfile();
+  const customOption=new Option('Custom','custom',false,activeProfile==='custom');customOption.disabled=true;
+  profileSelect.add(customOption);
+  for(const item of generationProfiles)profileSelect.add(new Option(item.label,item.id,false,activeProfile===item.id));
+  profileSelect.setAttribute('aria-label','Generation profile');
+  profileSelect.onchange=()=>applyGenerationProfile(profileSelect.value);
+  profile.append(element('span','','Profile'),profileSelect);d.append(profile);
   const donor=element('label','setting'),source=element('select');source.id='donor-source';
   source.add(new Option('Library','library'));source.add(new Option('Specific preset','preset'));
   source.value=state.gen.donorSource;
