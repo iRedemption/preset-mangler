@@ -1,7 +1,10 @@
 """Small desktop API; preset work remains in backend."""
 
 import base64
+import os
 from pathlib import Path
+import subprocess
+import sys
 from threading import RLock
 
 import webview
@@ -11,7 +14,8 @@ from backend.preset import load_preset, mangle, save_preset
 from backend.generation import generate
 from backend.generator.constants import PATCH_WORDS
 from backend.stats import build as build_stats
-from backend.settings import ASSETS, library_paths, modules, read_settings, write_settings
+from backend.settings import (ASSETS, library_paths, modules, read_settings,
+                              write_output_directory, write_settings)
 
 
 class Bridge:
@@ -31,6 +35,12 @@ class Bridge:
         except Exception as error:
             return {"error": str(error)}
 
+    def output_directory(self, directory):
+        try:
+            return write_output_directory(directory)
+        except Exception as error:
+            return {"error": str(error)}
+
     def library_stats(self):
         try:
             config = read_settings()
@@ -47,6 +57,31 @@ class Bridge:
             save_filename="Mangled.SerumPreset", file_types=("Serum preset (*.SerumPreset)",))
         return result[0] if result else ""
 
+    def reveal(self, path):
+        try:
+            if not path.strip():
+                raise ValueError("Enter a path to reveal.")
+            target = Path(path).expanduser().resolve()
+            if target.is_dir():
+                folder, select_file = target, False
+            else:
+                folder, select_file = target.parent, target.exists()
+                if not folder.is_dir():
+                    raise FileNotFoundError(f"Folder does not exist: {folder}")
+
+            if sys.platform == "win32":
+                if select_file:
+                    subprocess.Popen(["explorer", f"/select,{target}"])
+                else:
+                    os.startfile(str(folder))
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", "-R", str(target)] if select_file else ["open", str(folder)])
+            else:
+                subprocess.Popen(["xdg-open", str(folder)])
+            return {"success": True}
+        except Exception as error:
+            return {"error": str(error)}
+
     def load(self, path, encoded=None):
         with self._lock:
             try:
@@ -54,33 +89,52 @@ class Bridge:
                 source = None if encoded else Path(path).expanduser().resolve()
                 self._preset, self._source = preset, source
                 self._name = Path(path).name
-                output = (source.parent if source else Path.cwd()) / f"{Path(path).stem} (Mangled).SerumPreset"
+                default_directory = read_settings()["output_directory"]
+                output = (Path(default_directory).expanduser() if default_directory else
+                          source.parent if source else Path.cwd())
+                output /= f"{Path(path).stem} (Mangled).SerumPreset"
                 return {"input": str(source or path), "output": str(output), "modules": modules(preset)}
             except Exception as error:
                 return {"error": str(error)}
+
+    def inspect_preset(self, path):
+        try:
+            preset_path = Path(path).expanduser().resolve()
+            preset = load_preset(preset_path)
+            return {"path": str(preset_path), "modules": modules(preset)}
+        except Exception as error:
+            return {"error": str(error)}
 
     def generate(self, destination, selections, options):
         with self._lock:
             try:
                 config = read_settings()
-                if not config["valid"]:
+                donor_path = options.get("donor_path", "").strip() or None
+                if not donor_path and not config["valid"]:
                     raise ValueError("Set the library directory in Settings first.")
                 results = generate(config["library"], selections, mode=options["mode"],
                                    family=options["family"], count=options["count"],
                                    mutation=options["mutation"] / 100,
                                    interpolation=options["interpolation"] / 100,
-                                   seed=options.get("seed"))
+                                   seed=options.get("seed"),
+                                   base_path=options.get("base_path") or None,
+                                   donor_path=donor_path)
                 dry = options.get("dry_run", False)
                 folder = Path(destination).expanduser()
                 if not destination.strip() and not dry:
                     raise ValueError("Choose an output directory.")
-                prefix = options["family"] if options["mode"] == "smart" else "random"
+                prefix = ("custom" if donor_path else
+                          options["family"] if options["mode"] == "smart" else "random")
                 paths = [folder / f"generated_{prefix}_{index:03d}.SerumPreset"
                          for index in range(1, len(results) + 1)]
                 if not dry:
-                    inputs = {path.resolve() for path in library_paths(config["library"])}
+                    inputs = set()
+                    if config["valid"]:
+                        inputs.update(path.resolve() for path in library_paths(config["library"]))
+                    inputs.update(Path(path).expanduser().resolve()
+                                  for path in (donor_path, options.get("base_path")) if path)
                     if any(path.resolve() in inputs for path in paths):
-                        raise ValueError("Choose an output directory that will not overwrite library presets.")
+                        raise ValueError("Choose an output directory that will not overwrite a base, donor, or library preset.")
                     if any(path.exists() for path in paths) and not self._window.create_confirmation_dialog(
                             "Replace outputs?", "Replace existing generated files in this output directory?"):
                         return {"cancelled": True}

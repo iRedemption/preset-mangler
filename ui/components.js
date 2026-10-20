@@ -29,8 +29,12 @@ function pathRow(id,label,kind,changed) {
   const row=element('div','path'),input=element('input'); input.id=id; input.placeholder=label; input.setAttribute('aria-label',label);
   const browse=element('button','','Browse'); browse.type='button';
   browse.onclick=()=>run(async()=>{const path=await pywebview.api.browse(typeof kind==='function'?kind():kind); if(path) {input.value=path;input.dispatchEvent(new Event('input')); if(changed) await changed(path);}});
+  const reveal=tooltip(element('button','reveal-path'),`Show ${label.toLowerCase()} in the file manager.`);
+  reveal.type='button'; reveal.setAttribute('aria-label',`Show ${label.toLowerCase()} in the file manager`);
+  reveal.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.5h5l1.5 1.7h6.5v7.3h-13z"/></svg>';
+  reveal.onclick=()=>run(async()=>{const result=await pywebview.api.reveal(input.value);if(result.error)throw Error(result.error);});
   input.onkeydown=e=>{if(e.key==='Enter'&&changed) run(()=>changed(input.value));};
-  const text=element('label','',label); text.htmlFor=id; row.append(text,input,browse); return row;
+  const text=element('label','',label); text.htmlFor=id; row.append(text,input,browse,reveal); return row;
 }
 
 function knob(label,value,change,help='') {

@@ -2,6 +2,7 @@
 
 import copy
 import random
+from pathlib import Path
 
 from .generator.constants import PATCH_WORDS
 from .generator.selection import destination_types, parse_module, patch_families, source_labels
@@ -40,7 +41,8 @@ def identity(slot):
             slot.get("destModuleID"), slot.get("destModuleParamID"))
 
 
-def compose(base, parents, selections, rng, mutation=0, interpolation=0):
+def compose(base, parents, selections, rng, mutation=0, interpolation=0,
+            base_name="Init.SerumPreset"):
     if not 0 <= mutation <= 1 or not 0 <= interpolation <= 1:
         raise ValueError("Mutation and interpolation must be between 0% and 100%.")
     if any(key not in modules(base) or action not in {"generate", "modulations"}
@@ -50,10 +52,11 @@ def compose(base, parents, selections, rng, mutation=0, interpolation=0):
     for key in sorted(selections):
         candidates = [path for path, parent in parents.items() if key in parent["data"]]
         if not candidates:
-            report.append(f"{key}: absent from donors; kept Init value.")
+            report.append(f"{key}: absent from donors; kept base value.")
             continue
         path = rng.choice(candidates)
         assignments[key] = path
+    report.append(f"Base: {base_name}")
     participating = sorted(set(assignments.values()))
     for key, path in assignments.items():
         value = copy.deepcopy(parents[path]["data"][key])
@@ -113,11 +116,22 @@ def compose(base, parents, selections, rng, mutation=0, interpolation=0):
 
 
 def generate(directory, selections, mode="random", family="bass", count=1,
-             mutation=0, interpolation=0, seed=None):
+             mutation=0, interpolation=0, seed=None, base_path=None,
+             donor_path=None):
     if not isinstance(count, int) or isinstance(count, bool) or count < 1:
         raise ValueError("Count must be a positive integer.")
     if seed is not None and (not isinstance(seed, int) or isinstance(seed, bool)):
         raise ValueError("Seed must be a whole number, or left blank.")
-    parents = prepare_library(directory, mode, family)
-    base, rng = load_preset(ASSETS / "Init.SerumPreset"), random.Random(seed)
-    return [compose(base, parents, selections, rng, mutation, interpolation) for _ in range(count)]
+    if donor_path:
+        path = Path(donor_path).expanduser()
+        try:
+            parents = {path: load_preset(path)}
+        except Exception as error:
+            raise ValueError(f"Cannot load donor {path.name}: {error}") from error
+    else:
+        parents = prepare_library(directory, mode, family)
+    base_file = load_preset(base_path) if base_path else load_preset(ASSETS / "Init.SerumPreset")
+    base_name = Path(base_path).name if base_path else "Init.SerumPreset"
+    rng = random.Random(seed)
+    return [compose(base_file, parents, selections, rng, mutation, interpolation, base_name)
+            for _ in range(count)]

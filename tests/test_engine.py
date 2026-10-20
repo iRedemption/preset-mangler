@@ -15,7 +15,10 @@ from backend.preset import load_preset, mangle, save_preset
 
 class EngineTests(unittest.TestCase):
     def setUp(self):
-        self.source = Path(__file__).resolve().parents[3] / "testing/presets-for-tests/interpolationA.SerumPreset"
+        fixtures = Path(__file__).resolve().parents[1] / "testing/presets-for-tests"
+        if not fixtures.is_dir():
+            fixtures = Path(__file__).resolve().parents[2] / "serum-preset-mutator/testing/presets-for-tests"
+        self.source = fixtures / "interpolationA.SerumPreset"
         self.preset = load_preset(self.source)
 
     def test_scoped_mutation_preserves_source_and_siblings(self):

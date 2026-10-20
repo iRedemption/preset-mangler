@@ -28,18 +28,40 @@ def library_paths(directory):
 
 def read_settings():
     try:
-        directory = json.loads(CONFIG.read_text(encoding="utf-8")).get("library", "")
+        stored = json.loads(CONFIG.read_text(encoding="utf-8"))
     except (OSError, ValueError, AttributeError):
-        directory = ""
+        stored = {}
+    directory = stored.get("library", "")
+    output_directory = stored.get("output_directory", "")
     try:
         count = len(library_paths(directory)) if directory else 0
-        return {"library": directory, "valid": bool(count), "count": count}
+        return {"library": directory, "output_directory": output_directory,
+                "valid": bool(count), "count": count}
     except (ValueError, OSError, TypeError) as error:
-        return {"library": directory, "valid": False, "count": 0, "warning": str(error)}
+        return {"library": directory, "output_directory": output_directory,
+                "valid": False, "count": 0, "warning": str(error)}
 
 
 def write_settings(directory):
     paths = library_paths(directory)
     directory = str(Path(directory).expanduser().resolve())
-    CONFIG.write_text(json.dumps({"library": directory}, indent=2), encoding="utf-8")
-    return {"library": directory, "valid": True, "count": len(paths)}
+    output_directory = read_settings()["output_directory"]
+    CONFIG.write_text(json.dumps({"library": directory, "output_directory": output_directory},
+                                 indent=2), encoding="utf-8")
+    return {"library": directory, "output_directory": output_directory,
+            "valid": True, "count": len(paths)}
+
+
+def write_output_directory(directory):
+    if directory.strip():
+        path = Path(directory).expanduser()
+        if not path.is_dir():
+            raise ValueError("Choose a valid output directory.")
+        output_directory = str(path.resolve())
+    else:
+        output_directory = ""
+    settings = read_settings()
+    CONFIG.write_text(json.dumps({"library": settings["library"],
+                                  "output_directory": output_directory}, indent=2),
+                      encoding="utf-8")
+    return read_settings()

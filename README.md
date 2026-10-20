@@ -7,9 +7,9 @@ A desktop tool for mutating, generating, and inspecting Serum 2 `.SerumPreset` f
 | Feature | Description |
 | ------- | ----------- |
 | [Mutate](./docs/mutate.md) | Randomly perturb values in an existing preset |
-| [Generate](./docs/generate.md) | Build new presets from donors in your library |
+| [Generate](./docs/generate.md) | Build on Init or a chosen preset using library or specific-preset donors |
 | [Stats](./docs/stats.md) | Charts and summaries of your preset library |
-| [Settings](./docs/settings.md) | Set your preset library folder |
+| [Settings](./docs/settings.md) | Set your preset library and default output folders |
 
 ## Quick start
 
@@ -64,3 +64,5 @@ python3 mangler.py
 ```
 
 On Windows, the window uses Microsoft Edge WebView2, which is installed on most systems. On macOS, it uses the built-in WebKit.
+
+Use the folder button beside a path field to reveal its file or containing folder in Explorer, Finder, or the system file manager.

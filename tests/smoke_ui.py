@@ -16,7 +16,9 @@ from ui.bridge import Bridge
 from backend.preset import load_preset
 import backend.settings as settings
 
-root = Path(__file__).resolve().parents[3]
+root = Path(__file__).resolve().parents[1]
+if not (root / "testing/presets-for-tests").is_dir():
+    root = root.parent / "serum-preset-mutator"
 source = root / "testing/presets-for-tests/interpolationA.SerumPreset"
 temporary = tempfile.TemporaryDirectory()
 settings.CONFIG = Path(temporary.name) / "settings.json"
@@ -38,8 +40,8 @@ def check():
         else:
             raise AssertionError(window.evaluate_js("$('status').textContent"))
         assert window.evaluate_js("$('stage').hidden && document.querySelectorAll('#modes .mode-options>.choice').length===4")
-        assert window.evaluate_js("$('generate-mode').getAttribute('aria-disabled')==='true';")
-        assert window.evaluate_js("chooseMode('generate'); state.mode===null")
+        assert window.evaluate_js("$('generate-mode').getAttribute('aria-disabled')==='false';")
+        assert window.evaluate_js("chooseMode('generate'); state.mode==='generate'")
         assert window.evaluate_js("chooseMode('mutate'); $('stage').hidden && !$('empty').hidden && !!document.querySelector('.drop-icon')")
         window.evaluate_js("run(()=>load(" + json.dumps(str(source)) + "))")
         for _ in range(100):
@@ -87,7 +89,18 @@ def check():
                 break
             time.sleep(.1)
         assert window.evaluate_js("$('generate-mode').getAttribute('aria-disabled')==='false'")
+        default_output = Path(temporary.name) / "default-output"
+        default_output.mkdir()
+        window.evaluate_js("$('output-directory').value=" + json.dumps(str(default_output)) +
+                           "; $('save-output-directory').click();")
+        for _ in range(100):
+            if not window.evaluate_js("state.busy"):
+                break
+            time.sleep(.1)
+        assert window.evaluate_js("state.settings.output_directory===" + json.dumps(str(default_output.resolve())) +
+                                  " && state.gen.output===" + json.dumps(str(default_output.resolve())))
         assert window.evaluate_js("chooseMode('generate'); ! $('stage').hidden && state.generated.size===12")
+        assert window.evaluate_js("['base-path','output'].every(id=>{const row=$(id).parentElement;const button=row.querySelector('.reveal-path');return button&&button.getAttribute('aria-label')&&button.querySelector('svg')})")
         assert window.evaluate_js("['Oscillator0','Env0','LFO0','VoiceFilter0','Macro7'].every(k=>state.generated.get(k)==='modulations')")
         assert window.evaluate_js("document.querySelector('[data-module=Oscillator1] [data-action=generate]').click(); state.generated.get('Oscillator1')==='generate'")
         assert window.evaluate_js("$('family').value='bass'; $('family').dispatchEvent(new Event('change')); state.gen.mode==='smart' && state.gen.family==='bass' && !$('family').disabled")
@@ -104,6 +117,39 @@ def check():
         assert generated_preset['data']['Oscillator1'] == original['data']['Oscillator1']
         base = load_preset(settings.ASSETS / "Init.SerumPreset")
         assert generated_preset['data']['Oscillator2'] == base['data']['Oscillator2']
+        custom_base_path = root / "testing/presets-for-tests/Init_mod_cutoff.SerumPreset"
+        custom_base = load_preset(custom_base_path)
+        window.evaluate_js("$('report').close(); state.gen.donorSource='preset'; drawSidebar(); drawHeader(); "
+                           "$('donor-path').value=" + json.dumps(str(source)) + "; "
+                           "$('donor-path').dispatchEvent(new Event('input'));")
+        expected_base = str(custom_base_path.resolve())
+        window.evaluate_js("$('base-path').value=" + json.dumps(str(custom_base_path)) + ";")
+        window.evaluate_js("run(()=>selectBase(" + json.dumps(str(custom_base_path)) + "))")
+        for _ in range(100):
+            if window.evaluate_js("!state.busy && state.gen.basePath===" + json.dumps(expected_base)):
+                break
+            time.sleep(.1)
+        assert window.evaluate_js("state.gen.basePath===" + json.dumps(expected_base) +
+                                  " && state.generated.size===0 && state.baseModules.length>0 && "
+                                  "document.querySelector('[data-module=Oscillator1] [data-action=generate]').textContent==='Replace'")
+        custom_target = Path(temporary.name) / "custom-generated"
+        window.evaluate_js("$('output').value=" + json.dumps(str(custom_target)) + "; "
+                           "document.querySelector('[data-module=Oscillator1] [data-action=generate]').click(); $('export').click();")
+        for _ in range(100):
+            if window.evaluate_js("!state.busy && $('report').open"):
+                break
+            time.sleep(.1)
+        custom_output_path = custom_target / "generated_custom_001.SerumPreset"
+        assert custom_output_path.exists(), window.evaluate_js(
+            "JSON.stringify({status:$('status').textContent, donor:state.gen.donorPath, base:state.gen.basePath, "
+            "selected:Object.fromEntries(state.generated), busy:state.busy})")
+        custom_output = load_preset(custom_output_path)
+        donor = load_preset(source)
+        assert custom_output['data']['Oscillator1'] == donor['data']['Oscillator1']
+        assert all(custom_output['data'][key] == value for key, value in custom_base['data'].items()
+                   if key != 'Oscillator1')
+        assert window.evaluate_js("$('report').querySelector('pre').textContent.includes('Base: Init_mod_cutoff.SerumPreset') && "
+                                  "$('report').querySelector('pre').textContent.includes('interpolationA.SerumPreset')")
         assert window.evaluate_js("$('report').close(); chooseMode('mutate'); ! $('stage').hidden && state.amount===30 && state.mutated.has('Oscillator0')")
         window.evaluate_js("$('report').close(); chooseMode('stats');")
         for _ in range(100):
@@ -112,7 +158,7 @@ def check():
             time.sleep(.1)
         assert window.evaluate_js("!$('stats-page').hidden && document.querySelectorAll('#stats-page .chart-box').length>=10 && document.querySelectorAll('#stats-page .stat-card').length>=4"), window.evaluate_js("$('status').textContent")
         assert window.evaluate_js("chooseMode('mutate'); $('stats-page').hidden")
-        print("PASS: launch gating, mutation drop/export, library settings, generation defaults, Smart selection/export, Init preservation and mode switching.")
+        print("PASS: mode access, mutation drop/export, library settings, Init/custom-base generation, specific donors, preservation and mode switching.")
     except Exception:
         failures.append(traceback.format_exc())
     finally:
